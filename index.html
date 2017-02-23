@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tables - Vue.js</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.16/vue.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="http://cdn.materialdesignicons.com/1.8.36/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <style type="text/css">
+        .vjs_search {
+            width:100%;
+            margin:5px;
+            padding:5px;
+        }
+        table thead tr th a {
+            cursor:pointer;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        table thead tr th a.sort-desc:before {
+            content: "\F4BD" !important;
+            font: normal normal normal 16px/1 "Material Design Icons"
+        }
+        table thead tr th a.sort-asc:before {
+            content: "\F4BC" !important;
+            font: normal normal normal 16px/1 "Material Design Icons"
+        }
+
+        table thead tr th a:before {
+            content: "\F4BA";
+            font: normal normal normal 16px/1 "Material Design Icons"
+        }
+    </style>
+
+</head>
+<body>
+
+<div style="text-align:center;color:#b20009; font-weight:bold;font-size:11px" id="grid-text">Retrieving new data, please wait ..
+</div>
+<div id="vuejs-matrice">
+    <input v-if="searchable" v-model="searchKey" placeholder="Search" class="vjs_search">
+
+    <table class="table table-fixed table-hover datagrid-overview">
+        <thead>
+        <tr role="row">
+            <th v-for="item in head">
+                <a v-if="item.orderable" @click="changeOrder(item.id)" v-bind:class="{ 'sort-desc':  orderKey == item.id && orderType == -1, 'sort-asc':  orderKey == item.id && orderType == 1 }">${ item.title }</a>
+                <span v-if="!item.orderable">${ item.title }</span>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr role="row" :class="{'even': $index % 2 === 0, 'odd': $index % 2 !== 0 }"  v-for="item in data | filterBy searchKey | orderBy orderKey orderType | limitBy limit limit*current_page-limit">
+            <td v-for="itemHead in head">${ getValue(itemHead, item) }</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <nav v-if="max_page > 1">
+        <ul class="pagination">
+            <li v-bind:class="{'disabled': current_page <= 1, 'enable': current_page  > 1}"><a @click="goToPage(current_page-1)" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+
+            <li v-if="current_page == max_page & current_page-2 > 0" v-bind:class="enable"><a href="#" @click="goToPage(current_page+2)">${ current_page-2 }</a></li>
+            <li v-if="current_page-1 > 0" v-bind:class="enable"><a href="#" @click="goToPage(current_page-1)">${ current_page-1 }</a></li>
+
+            <li v-bind:class="{'active': current_page = 1 }"><a href="#">${ current_page }</a></li>
+
+            <li v-if="current_page+1 <= max_page" v-bind:class="enable"><a href="#" @click="goToPage(current_page+1)">${ current_page+1 }</a></li>
+            <li v-if="current_page == 1 & current_page+2 <= max_page" v-bind:class="enable"><a href="#" @click="goToPage(current_page+2)">${ current_page+2 }</a></li>
+
+
+
+            <li v-bind:class="{'disabled': current_page >= max_page, 'enable': current_page  < max_page}"><a @click="goToPage(current_page+1)" aria-label="Previous"><span aria-hidden="true">&raquo;</span></a></li>
+        </ul>
+    </nav>
+</div>
+
+<script>
+    Vue.config.delimiters = ['${', '}']
+    var vm = new Vue({
+        el: '#vuejs-matrice',
+
+        methods: {
+            updateData: function (data) {
+                this.data = data;
+                this.flux_size = data.length;
+                this.current_page = 1;
+                this.max_page = Math.ceil(this.flux_size / this.limit);
+            },
+
+            goToPage: function(page){
+                if(page > 0 && page <= this.max_page) this.current_page = page;
+            },
+
+            getValue: function(head, item) {
+                if(typeof head.dataFormatter == "function") {
+                    return head.dataFormatter(item[head.id]);
+                }
+                return item[head.id];
+            },
+
+            changeOrder: function(key) {
+                if(this.orderKey == key) {
+                    if(this.orderType == 1) { this.orderType = -1; }
+                    else { this.orderType = 1; }
+                } else {
+                    this.orderType = 1;
+                    this.orderKey = key;
+                }
+            }
+        },
+
+        data: {
+            orderKey: 'size',
+            orderType: -1,
+            flux_size: 0,
+            current_page: 1,
+            max_page: 1,
+            limit: 30,
+            offset: 0,
+            searchable:true,
+            data: [
+                {col_1: "test", col_2: "col2", col_3: "col3",col_4:"col4"}
+            ],
+            head: [
+                { title: "Column 1", id:"col_1", orderable:true },
+                { title: "Column 2", id:"col_2", orderable:true },
+                { title: "Column 3", id:"col_3", orderable:true },
+                { title: "Column 4", id:"col_4", orderable:false, dataFormatter: function(data) { return "X"+data } }
+            ]
+        }
+    });
+
+</script>
+</body>
